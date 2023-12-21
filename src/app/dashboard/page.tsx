@@ -3,6 +3,7 @@ import HistoryCard from '@/components/dashboard/HistoryCard'
 import HotTopicsCard from '@/components/dashboard/HotTopicsCard'
 import QuizMeCard from '@/components/dashboard/QuizMeCard'
 import RecentActivityCard from '@/components/dashboard/RecentActivityCard'
+import DetailsDialog from '@/components/shared/DetailsDialog'
 import { redirect } from 'next/navigation'
 
 export const metadata = {
@@ -19,6 +20,7 @@ const Dashboard = async () => {
     <main className="mx-auto mt-[60px] max-w-7xl p-8">
       <div className="flex items-center">
         <h2 className="mr-2 text-3xl font-bold tracking-tight">Dashboard</h2>
+        <DetailsDialog />
       </div>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">

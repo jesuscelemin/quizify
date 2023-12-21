@@ -1,6 +1,7 @@
 import prisma from '@/lib/prismadb'
 import { HistoryComponentProps } from '@/types'
-import { CopyCheck, Edit2, Link, Clock } from 'lucide-react'
+import { CopyCheck, Edit2, Clock } from 'lucide-react'
+import Link from 'next/link'
 
 const HistoryComponent = async ({ limit, userId }: HistoryComponentProps) => {
   const games = await prisma.game.findMany({

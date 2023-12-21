@@ -1,5 +1,4 @@
 /* eslint-disable camelcase */
-import React from 'react'
 import {
   Card,
   CardContent,
@@ -34,7 +33,7 @@ const RecentActivityCard = async () => {
           You have played a total of {games_count} quizzes.
         </CardDescription>
       </CardHeader>
-      <CardContent className="max-h-[580px] overflow-scroll">
+      <CardContent className="max-h-[580px] overflow-x-auto overflow-y-hidden">
         <HistoryComponent limit={10} userId={session.user.id} />
       </CardContent>
     </Card>

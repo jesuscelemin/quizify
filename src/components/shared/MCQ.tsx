@@ -10,7 +10,7 @@ import MCQCounter from './MCQCounter'
 import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
 import { z } from 'zod'
-import { checkAnswerSchema } from '@/schemas/questions'
+import { checkAnswerSchema, endGameSchema } from '@/schemas/questions'
 import { useToast } from '../ui/use-toast'
 import Link from 'next/link'
 import { cn, formatTimeDelta } from '@/lib/utils'
@@ -18,12 +18,45 @@ import { differenceInSeconds } from 'date-fns'
 
 const MCQ = ({ game }: MCQProps) => {
   const [questionIndex, setQuestionIndex] = useState(0)
+  const [hasEnded, setHasEnded] = useState(false)
+  const [stats, setStats] = useState({
+    correct_answers: 0,
+    wrong_answers: 0
+  })
   const [selectedChoice, setSelectedChoice] = useState<number>(0)
-  const [correctAnswers, setCorrectAnswers] = useState<number>(0)
-  const [wrongAnswers, setWrongAnswers] = useState<number>(0)
-  const [hasEnded, setHasEnded] = useState<boolean>(false)
-  const [now, setNow] = useState<Date>(new Date())
+  const [now, setNow] = useState(new Date())
+
+  const currentQuestion = useMemo(() => {
+    return game.questions[questionIndex]
+  }, [questionIndex, game.questions])
+
+  const options = useMemo(() => {
+    if (!currentQuestion) return []
+    if (!currentQuestion.options) return []
+    return JSON.parse(currentQuestion.options as string) as string[]
+  }, [currentQuestion])
+
   const { toast } = useToast()
+  const { mutate: checkAnswer, isPending: isChecking } = useMutation({
+    mutationFn: async () => {
+      const payload: z.infer<typeof checkAnswerSchema> = {
+        questionId: currentQuestion.id,
+        userAnswer: options[selectedChoice]
+      }
+      const response = await axios.post(`/api/checkAnswer`, payload)
+      return response.data
+    }
+  })
+
+  const { mutate: endGame } = useMutation({
+    mutationFn: async () => {
+      const payload: z.infer<typeof endGameSchema> = {
+        gameId: game.id
+      }
+      const response = await axios.post(`/api/endGame`, payload)
+      return response.data
+    }
+  })
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -31,52 +64,42 @@ const MCQ = ({ game }: MCQProps) => {
         setNow(new Date())
       }
     }, 1000)
-
     return () => clearInterval(interval)
   }, [hasEnded])
 
-  const currentQuestion = useMemo(() => {
-    return game.questions[questionIndex]
-  }, [questionIndex, game.questions])
-
-  const { mutate: checkAnswer, isPending: isChecking } = useMutation({
-    mutationFn: async () => {
-      const payload: z.infer<typeof checkAnswerSchema> = {
-        questionId: currentQuestion.id,
-        userAnswer: options[selectedChoice]
-      }
-      const response = await axios.post('/api/checkAnswer', payload)
-      return response.data
-    }
-  })
-
   const handleNext = useCallback(() => {
-    if (isChecking) return
     checkAnswer(undefined, {
       onSuccess: ({ isCorrect }) => {
         if (isCorrect) {
+          setStats(stats => ({
+            ...stats,
+            correct_answers: stats.correct_answers + 1
+          }))
           toast({
-            title: 'Correct!',
-            description: 'Correct answer',
+            title: 'Correct',
+            description: 'You got it right!',
             variant: 'success'
           })
-          setCorrectAnswers(prev => prev + 1)
         } else {
+          setStats(stats => ({
+            ...stats,
+            wrong_answers: stats.wrong_answers + 1
+          }))
           toast({
-            title: 'Incorrect!',
-            description: 'Incorrect answer',
+            title: 'Incorrect',
+            description: 'You got it wrong!',
             variant: 'destructive'
           })
-          setWrongAnswers(prev => prev + 1)
         }
         if (questionIndex === game.questions.length - 1) {
+          endGame()
           setHasEnded(true)
           return
         }
-        setQuestionIndex(prev => prev + 1)
+        setQuestionIndex(questionIndex => questionIndex + 1)
       }
     })
-  }, [checkAnswer, isChecking, toast, questionIndex, game.questions.length])
+  }, [checkAnswer, questionIndex, game.questions.length, toast, endGame])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -102,22 +125,16 @@ const MCQ = ({ game }: MCQProps) => {
     }
   }, [handleNext])
 
-  const options = useMemo(() => {
-    if (!currentQuestion) return []
-    if (!currentQuestion.options) return []
-    return JSON.parse(currentQuestion.options as string) as string[]
-  }, [currentQuestion])
-
   if (hasEnded) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center">
-        <div className="mt-2 whitespace-nowrap rounded-md bg-green-500 px-4 font-semibold text-white">
-          You completed in {''}
+      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col justify-center">
+        <div className="mt-2 whitespace-nowrap rounded-md bg-green-500 px-4 py-2 font-semibold text-white">
+          You Completed in{' '}
           {formatTimeDelta(differenceInSeconds(now, game.timeStarted))}
         </div>
         <Link
-          href={`statistics/${game.id}`}
-          className={cn(buttonVariants(), 'mt-2')}
+          href={`/statistics/${game.id}`}
+          className={cn(buttonVariants({ size: 'lg' }), 'mt-2')}
         >
           View Statistics
           <BarChart className="ml-2 h-4 w-4" />
@@ -127,31 +144,30 @@ const MCQ = ({ game }: MCQProps) => {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center">
-      <div className="flex w-full flex-row items-center justify-between">
+    <div className="absolute left-1/2 top-1/2 w-[90vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 md:w-[80vw]">
+      <div className="flex flex-row justify-between">
         <div className="flex flex-col">
-          {/* Topic */}
+          {/* topic */}
           <p>
-            <span className="mr-2 text-slate-400">Topic</span>
+            <span className="text-slate-400">Topic</span> &nbsp;
             <span className="rounded-lg bg-slate-800 px-2 py-1 text-white">
               {game.topic}
             </span>
           </p>
-          <div className="mt-2 flex items-center text-slate-400">
+          <div className="mt-3 flex self-start text-slate-400">
             <Timer className="mr-2" />
             {formatTimeDelta(differenceInSeconds(now, game.timeStarted))}
           </div>
         </div>
         <MCQCounter
-          correctAnswers={correctAnswers}
-          wrongAnswers={wrongAnswers}
+          correctAnswers={stats.correct_answers}
+          wrongAnswers={stats.wrong_answers}
         />
       </div>
-
       <Card className="mt-4 w-full">
         <CardHeader className="flex flex-row items-center">
           <CardTitle className="mr-5 divide-y divide-zinc-600/50 text-center">
-            <div className="text-base">{questionIndex + 1}</div>
+            <div className='text-base'>{questionIndex + 1}</div>
             <div className="text-base text-slate-400">
               {game.questions.length}
             </div>
@@ -161,35 +177,39 @@ const MCQ = ({ game }: MCQProps) => {
           </CardDescription>
         </CardHeader>
       </Card>
-
       <div className="mt-4 flex w-full flex-col items-center justify-center">
-        {options.map((option, index) => (
-          <Button
-            key={index}
-            className="mb-4 w-full justify-start py-8"
-            variant={selectedChoice === index ? 'default' : 'secondary'}
-            onClick={() => {
-              setSelectedChoice(index)
-            }}
-          >
-            <div className="flex items-center justify-start">
-              <div className="mr-5 rounded-md border p-2 px-3">{index + 1}</div>
-            </div>
-            <div className="text-start">{option}</div>
-          </Button>
-        ))}
+        {options.map((option, index) => {
+          return (
+            <Button
+              key={option}
+              variant={selectedChoice === index ? 'default' : 'outline'}
+              className="mb-4 w-full justify-start py-8"
+              onClick={() => setSelectedChoice(index)}
+            >
+              <div className="flex items-center justify-start">
+                <div className="mr-5 rounded-md border p-2 px-3">
+                  {index + 1}
+                </div>
+                <div className="text-start">{option}</div>
+              </div>
+            </Button>
+          )
+        })}
         <Button
+          variant="default"
           className="mt-2"
-          disabled={isChecking}
+          size="lg"
+          disabled={isChecking || hasEnded}
           onClick={() => {
             handleNext()
           }}
         >
-          {isChecking && <Loader2 className="animated-spin mr-2 h-4 w-4" />}
+          {isChecking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Next <ChevronRight className="ml-2 h-4 w-4" />
         </Button>
       </div>
     </div>
   )
 }
+
 export default MCQ

@@ -11,7 +11,7 @@ const fontSizeMapper = (word: { value: number }) => {
 
 const WordCloud = ({ formattedTopics }: WordCloudProps) => {
   const theme = useTheme()
-  const router = useRouter()
+  const router = useRouter()  
 
   return (
     <>

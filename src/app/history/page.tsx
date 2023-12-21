@@ -13,7 +13,7 @@ const History = async () => {
     return redirect('/')
   }
   return (
-    <div className="flex min-h-screen w-[400px] items-center justify-center">
+    <div className="absolute left-1/2 top-1/2 w-[400px] -translate-x-1/2 -translate-y-1/2">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -24,7 +24,7 @@ const History = async () => {
             </Link>
           </div>
         </CardHeader>
-        <CardContent className="max-h-[60vh] overflow-scroll">
+        <CardContent className="max-h-[60vh] overflow-x-auto overflow-y-hidden">
           <HistoryComponent limit={100} userId={session.user.id} />
         </CardContent>
       </Card>

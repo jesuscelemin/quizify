@@ -23,27 +23,27 @@ const StatisticsPage = async ({ params: { gameId } }: StatisticsPageProps) => {
     return redirect('/')
   }
 
-   let accuracy: number = 0
+  let accuracy: number = 0
 
-   if (game.gameType === 'mcq') {
-     const totalCorrect = game.questions.reduce((acc, question) => {
-       if (question.isCorrect) {
-         return acc + 1
-       }
-       return acc
-     }, 0)
-     accuracy = (totalCorrect / game.questions.length) * 100
-   } else if (game.gameType === 'open_ended') {
-     const totalPercentage = game.questions.reduce((acc, question) => {
-       return acc + (question.percentageCorrect ?? 0)
-     }, 0)
-     accuracy = totalPercentage / game.questions.length
-   }
-   accuracy = Math.round(accuracy * 100) / 100
+  if (game.gameType === 'mcq') {
+    const totalCorrect = game.questions.reduce((acc, question) => {
+      if (question.isCorrect) {
+        return acc + 1
+      }
+      return acc
+    }, 0)
+    accuracy = (totalCorrect / game.questions.length) * 100
+  } else if (game.gameType === 'open_ended') {
+    const totalPercentage = game.questions.reduce((acc, question) => {
+      return acc + (question.percentageCorrect ?? 0)
+    }, 0)
+    accuracy = totalPercentage / game.questions.length
+  }
+  accuracy = Math.round(accuracy * 100) / 100
 
   return (
     <>
-      <div className="mx-auto max-w-7xl p-8">
+      <div className="mx-auto mt-[60px] max-w-7xl p-8">
         <div className="flex items-center justify-between space-y-2">
           <h2 className="text-3xl font-bold tracking-tight">Statics</h2>
           <div className="flex items-center space-x-2">

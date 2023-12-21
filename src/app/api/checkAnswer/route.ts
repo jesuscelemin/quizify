@@ -47,8 +47,8 @@ export async function POST(req: Request, res: Response) {
       )
     } else if (question.questionType === 'open_ended') {
       let percentageSimilar = compareTwoStrings(
-        userAnswer.toLowerCase().trim(),
-        question.answer.toLowerCase().trim()
+        question.answer.toLowerCase().trim(),
+        userAnswer.toLowerCase().trim()
       )
 
       percentageSimilar = Math.round(percentageSimilar * 100)

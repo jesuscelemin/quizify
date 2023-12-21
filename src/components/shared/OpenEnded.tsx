@@ -3,7 +3,7 @@
 import { cn, formatTimeDelta } from '@/lib/utils'
 import { OpenendedProps } from '@/types'
 import { differenceInSeconds } from 'date-fns'
-import { Timer, Loader2, ChevronRight, BarChart, Link } from 'lucide-react'
+import { Timer, Loader2, ChevronRight, BarChart } from 'lucide-react'
 import { Button, buttonVariants } from '../ui/button'
 import { Card, CardHeader, CardTitle, CardDescription } from '../ui/card'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -14,6 +14,7 @@ import { z } from 'zod'
 import { useToast } from '../ui/use-toast'
 import BlankAnswerInput from './BlankAnswerInput'
 import OpenEndedPercentage from './OpenEndedPercentage'
+import Link from 'next/link'
 
 const OpenEnded = ({ game }: OpenendedProps) => {
   const [hasEnded, setHasEnded] = useState(false)
@@ -23,7 +24,6 @@ const OpenEnded = ({ game }: OpenendedProps) => {
   const currentQuestion = useMemo(() => {
     return game.questions[questionIndex]
   }, [questionIndex, game.questions])
-
   const { mutate: endGame } = useMutation({
     mutationFn: async () => {
       const payload: z.infer<typeof endGameSchema> = {
@@ -33,7 +33,6 @@ const OpenEnded = ({ game }: OpenendedProps) => {
       return response.data
     }
   })
-
   const { toast } = useToast()
   const [now, setNow] = useState(new Date())
   const { mutate: checkAnswer, isPending: isChecking } = useMutation({
@@ -51,6 +50,7 @@ const OpenEnded = ({ game }: OpenendedProps) => {
       return response.data
     }
   })
+
   useEffect(() => {
     if (!hasEnded) {
       const interval = setInterval(() => {
@@ -85,7 +85,6 @@ const OpenEnded = ({ game }: OpenendedProps) => {
       }
     })
   }, [checkAnswer, questionIndex, toast, endGame, game.questions.length])
-
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const key = event.key
@@ -101,7 +100,7 @@ const OpenEnded = ({ game }: OpenendedProps) => {
 
   if (hasEnded) {
     return (
-      <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center">
+      <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col justify-center">
         <div className="mt-2 whitespace-nowrap rounded-md bg-green-500 px-4 py-2 font-semibold text-white">
           You Completed in{' '}
           {formatTimeDelta(differenceInSeconds(now, game.timeStarted))}
@@ -118,7 +117,7 @@ const OpenEnded = ({ game }: OpenendedProps) => {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center">
+    <div className="absolute left-1/2 top-1/2 w-[90vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 md:w-[80vw]">
       <div className="flex flex-row justify-between">
         <div className="flex flex-col">
           {/* topic */}
@@ -138,7 +137,7 @@ const OpenEnded = ({ game }: OpenendedProps) => {
       <Card className="mt-4 w-full">
         <CardHeader className="flex flex-row items-center">
           <CardTitle className="mr-5 divide-y divide-zinc-600/50 text-center">
-            <div>{questionIndex + 1}</div>
+            <div className='text-base'>{questionIndex + 1}</div>
             <div className="text-base text-slate-400">
               {game.questions.length}
             </div>
@@ -168,4 +167,5 @@ const OpenEnded = ({ game }: OpenendedProps) => {
     </div>
   )
 }
+
 export default OpenEnded
